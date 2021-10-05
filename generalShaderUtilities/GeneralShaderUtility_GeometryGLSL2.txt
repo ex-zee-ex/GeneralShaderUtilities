@@ -1,0 +1,129 @@
+/**ANDREI JAY: GENERAL SHADER UTILITY FUNCTIONS 1: GEOMETRY (GLSL 2 edition, untested in GLES or WebGL yet)**/
+
+/* all functions assume that the coordinate system is normalized between 0 and 1
+unless otherwise stated*/
+
+vec2 toroidCoord(vec2 inCoord){
+    
+	//how to remove the if statements
+	//if inCoord.x> inDim.x then inCoord.x/inDim.x >1 meaning int(inCoord.x/inDim.x)=1 so we can use this as logic
+    if(abs(inCoord.x)>1){inCoord.x=abs(1.0-inCoord.x);}
+    if(abs(inCoord.y)>1){inCoord.y=abs(1.0-inCoord.y);}
+    
+    inCoord.x=mod(inCoord.x,1.0);
+    inCoord.y=mod(inCoord.y,1.0);
+
+    return inCoord;
+}
+
+vec2 mirrorCoord(vec2 inCoord,vec2 inDim){
+
+	
+	if(inCoord.x<0){inCoord.x=abs(inCoord.x);}
+	if(inCoord.y<0){inCoord.y=abs(inCoord.y);}
+	inCoord.x=mod(inCoord.x,inDim.x*2.0);
+	inCoord.y=mod(inCoord.y,inDim.y*2.0);
+    
+    if(inCoord.x>inDim.x){inCoord.x=inDim.x-mod(inCoord.x,inDim.x);}
+    if(inCoord.y>inDim.y){inCoord.y=inDim.y-mod(inCoord.y,inDim.y);}
+    
+
+    return inCoord;
+}
+
+//normalized to 0 1
+vec2 xyzDisplace(vec2 inCoord,vec3 displacement){
+    inCoord.xy+=displacement.xy;
+    
+    inCoord.xy-=.5;
+    inCoord.xy*=displacement.z;
+    inCoord.xy+=.5;
+    
+    return inCoord;
+}
+
+vec2 zRotate(vec2 inCoord, float angle){
+    float x_center=inCoord.x-.5;
+    float y_center=inCoord.y-.5;
+    
+    float x_rot=0;
+    float y_rot=0;
+    
+    //z rotation
+    x_rot=x_center*cos(angle)-y_center*sin(angle);
+    y_rot=x_center*sin(angle)+y_center*cos(angle);
+    
+    return vec2(x_rot,y_rot);
+}
+
+vec2 shear(vec2 inCoord, vec4 shearMatrix){
+	inCoord.x-=0.5;
+	inCoord.y-=0.5;
+
+	inCoord.x=shearMatrix.x*inCoord.x+shearMatrix.y*inCoord.y;
+	inCoord.y=shearMatrix.z*inCoord.x+shearMatrix.w*inCoord.y;
+
+	inCoord.x+=0.5;
+	inCoord.y+=0.5;
+	return inCoord;
+}
+
+//note that when we normalize we can just pass things like amnt and center in as -1 to 1...
+vec2 fishEye(vec2 inCoord,float amnt,vec2 center){
+	
+	inCoord=2.0*inCoord-1.0;
+
+	float theta=atan(inCoord.y,inCoord.x);
+	//add center offsets here for controls?
+	float radius=distance(inCoord,vec2(center.x,center.y));
+	//float radius=distance(inCoord,vec2(.5,.2));
+
+	//add gui controls for amnt
+	float c3=5.0;
+	radius=pow(radius,(amnt+1/c3)*c3);
+	inCoord.x=radius*cos(theta);
+	inCoord.y=radius*sin(theta);
+
+	inCoord*=.5;
+	inCoord+=.5;
+	
+	return inCoord;
+}
+
+
+vec2 spiralize(vec2 inCoord, float amount, float angle, vec2 center){
+
+	inCoord=2.0*inCoord-1.0;
+
+	float radius=distance(inCoord,vec2(center.x,center.y));
+	radius = (amount-radius)/amount;
+	float theta=radius*angle;
+	float s=sin(theta);
+	float c=cos(theta);
+	//dang rewrite all the matrix shit this way ya goof
+	inCoord= vec2( dot( inCoord, vec2(c,-s) )
+				 , dot( inCoord, vec2(s, c) ) );
+
+	inCoord*=.5;
+	inCoord+=.5;
+
+	return inCoord;
+}
+
+vec2 kaleidoscope(vec2 inCoord, float segment){
+	if(segment>0.0){
+		//inCoord.xy=inCoord.xy/inDim.xy;
+		inCoord=2.0*inCoord-1.0;
+	
+		float radius=sqrt( dot(inCoord,inCoord) );
+		float angle=atan(inCoord.y,inCoord.x);
+		float segmentAngle=TWO_PI/segment;
+		angle-=segmentAngle*floor(angle/segmentAngle);
+		angle=min(angle,segmentAngle-angle);
+		inCoord=radius*vec2(cos(angle),sin(angle));
+
+		inCoord=.5*(inCoord+1.0);
+		//inCoord.xy=inCoord.xy*inDim.xy;
+	}
+	return inCoord;
+}
