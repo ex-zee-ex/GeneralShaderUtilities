@@ -16,6 +16,7 @@ vec2 toroidCoord(vec2 inCoord){
     return inCoord;
 }
 
+//not normalized
 vec2 mirrorCoord(vec2 inCoord,vec2 inDim){
 
 	
@@ -50,9 +51,14 @@ vec2 zRotate(vec2 inCoord, float angle){
     float y_rot=0;
     
     //z rotation
+    //note: this rotation assumes a square 1:1 aspect ratio
+    //need to add version that preserves proportionality for 
+    //non square aspect ratios
     x_rot=x_center*cos(angle)-y_center*sin(angle);
     y_rot=x_center*sin(angle)+y_center*cos(angle);
     
+    x_rot+=.5;
+    y_rot+=.5;
     return vec2(x_rot,y_rot);
 }
 
@@ -68,7 +74,7 @@ vec2 shear(vec2 inCoord, vec4 shearMatrix){
 	return inCoord;
 }
 
-//note that when we normalize we can just pass things like amnt and center in as -1 to 1...
+
 vec2 fishEye(vec2 inCoord,float amnt,vec2 center){
 	
 	inCoord=2.0*inCoord-1.0;
